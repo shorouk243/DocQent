@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket Connection Test</h1>
+    <div id="status">Connecting...</div>
+    <div id="messages"></div>
+    
+    <script>
+        // Test WebSocket connection
+        const documentId = 1; // Change this to a valid document ID
+        const userId = 1; // Change this to a valid user ID
+        const wsUrl = `ws://localhost:8000/ws/collaboration/${documentId}?user_id=${userId}`;
+        
+        const statusDiv = document.getElementById('status');
+        const messagesDiv = document.getElementById('messages');
+        
+        function addMessage(msg) {
+            const p = document.createElement('p');
+            p.textContent = new Date().toLocaleTimeString() + ': ' + msg;
+            messagesDiv.appendChild(p);
+        }
+        
+        addMessage('Attempting to connect to: ' + wsUrl);
+        
+        try {
+            const ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                statusDiv.textContent = '✅ CONNECTED';
+                statusDiv.style.color = 'green';
+                addMessage('WebSocket connection opened successfully!');
+            };
+            
+            ws.onerror = (error) => {
+                statusDiv.textContent = '❌ ERROR';
+                statusDiv.style.color = 'red';
+                addMessage('WebSocket error: ' + JSON.stringify(error));
+            };
+            
+            ws.onclose = (event) => {
+                statusDiv.textContent = '⚠️ CLOSED (code: ' + event.code + ')';
+                statusDiv.style.color = 'orange';
+                addMessage('WebSocket closed. Code: ' + event.code + ', Reason: ' + (event.reason || 'none'));
+            };
+            
+            ws.onmessage = (event) => {
+                addMessage('Received message: ' + event.data);
+            };
+            
+            // Send a test message after 2 seconds
+            setTimeout(() => {
+                if (ws.readyState === WebSocket.OPEN) {
+                    const testOp = {
+                        user_id: userId,
+                        op: 'insert',
+                        position: 0,
+                        text: 'Test message'
+                    };
+                    ws.send(JSON.stringify(testOp));
+                    addMessage('Sent test message');
+                }
+            }, 2000);
+            
+        } catch (error) {
+            statusDiv.textContent = '❌ FAILED TO CREATE';
+            statusDiv.style.color = 'red';
+            addMessage('Failed to create WebSocket: ' + error.message);
+        }
+    </script>
+</body>
+</html>
+

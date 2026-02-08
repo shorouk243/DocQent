@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+sqlalchemy
+mysql-connector-python
+pydantic
+unsloth
+torch
+xformers
+trl
+peft
+accelerate
+bitsandbytes
+datasets
+tavily-python
