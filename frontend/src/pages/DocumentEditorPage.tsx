@@ -9,6 +9,7 @@ import { ShareModal } from '../components/ShareModal';
 import { DocumentEditor } from '../components/DocumentEditor';
 import { WebSocketOperation } from '../services/websocket';
 import { Document } from '../api/documents';
+import { getAccessToken } from '../api/client';
 
 /**
  * Main Document Editor Page
@@ -40,7 +41,7 @@ export const DocumentEditorPage: React.FC = () => {
     deleteCurrentDocument,
     setCurrentDocument,
     refreshDocuments,
-  } = useDocuments(user?.id || null);
+  } = useDocuments(!!user);
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -66,6 +67,7 @@ export const DocumentEditorPage: React.FC = () => {
   const { sendOperation, isConnected: wsConnected } = useWebSocket(
     currentDocument?.id || null,
     user?.id || null, // Use null instead of 0 to prevent invalid connections
+    getAccessToken(),
     handleWebSocketOperation
   );
 
@@ -91,7 +93,6 @@ export const DocumentEditorPage: React.FC = () => {
       const newDoc = await createNewDocument({
         title: 'Untitled Document',
         content: '',
-        owner_id: user.id,
       });
       setCurrentDocument(newDoc);
     } catch (err) {
@@ -133,7 +134,7 @@ export const DocumentEditorPage: React.FC = () => {
   const handleDeleteDocument = async (documentId: number) => {
     if (!user) return;
     try {
-      await deleteCurrentDocument(documentId, user.id);
+      await deleteCurrentDocument(documentId);
       if (currentDocument?.id === documentId) {
         setCurrentDocument(null);
       }
@@ -146,9 +147,9 @@ export const DocumentEditorPage: React.FC = () => {
   // Save functions (receive documentId/userId as args to avoid stale closure when debounce fires)
   // Use silent=true to prevent loading overlay from showing during typing
   const saveTitle = useCallback(
-    async (documentId: number, userId: number, title: string) => {
+    async (documentId: number, title: string) => {
       try {
-        await updateCurrentDocument(documentId, { title }, userId, true);
+        await updateCurrentDocument(documentId, { title }, true);
       } catch (err) {
         console.error('Failed to update title:', err);
       }
@@ -157,9 +158,9 @@ export const DocumentEditorPage: React.FC = () => {
   );
 
   const saveContent = useCallback(
-    async (documentId: number, userId: number, content: string) => {
+    async (documentId: number, content: string) => {
       try {
-        await updateCurrentDocument(documentId, { content }, userId, true);
+        await updateCurrentDocument(documentId, { content }, true);
         lastSavedContentRef.current = content;
       } catch (err) {
         console.error('Failed to update content:', err);
@@ -175,7 +176,7 @@ export const DocumentEditorPage: React.FC = () => {
   const handleTitleChange = useCallback(
     (title: string) => {
       if (!currentDocument || !user) return;
-      debouncedSaveTitle(currentDocument.id, user.id, title);
+      debouncedSaveTitle(currentDocument.id, title);
     },
     [currentDocument, user, debouncedSaveTitle]
   );
@@ -186,7 +187,7 @@ export const DocumentEditorPage: React.FC = () => {
       if (!currentDocument || !user) return;
       latestContentRef.current = content;
       dirtyContentRef.current = true;
-      debouncedSaveContent(currentDocument.id, user.id, content);
+      debouncedSaveContent(currentDocument.id, content);
     },
     [currentDocument, user, debouncedSaveContent]
   );
@@ -196,7 +197,7 @@ export const DocumentEditorPage: React.FC = () => {
     const latest = latestContentRef.current;
     if (!latest || latest === lastSavedContentRef.current) return;
     try {
-      await updateCurrentDocument(currentDocument.id, { content: latest }, user.id, true);
+      await updateCurrentDocument(currentDocument.id, { content: latest }, true);
       lastSavedContentRef.current = latest;
     } catch (err) {
       console.error('Failed to flush content save:', err);
@@ -233,7 +234,7 @@ export const DocumentEditorPage: React.FC = () => {
         return;
       }
       savingRef.current = true;
-      updateCurrentDocument(currentDocument.id, { content: latest }, user.id, true)
+      updateCurrentDocument(currentDocument.id, { content: latest }, true)
         .then(() => {
           lastSavedContentRef.current = latest;
           dirtyContentRef.current = false;
@@ -289,12 +290,13 @@ export const DocumentEditorPage: React.FC = () => {
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-700">
               Welcome, <span className="font-medium">{user.username}</span>
+              <span className="ml-2 text-xs text-gray-500 font-bold">ID: {user.id}</span>
             </span>
             <button
               onClick={handleLogout}
-              className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1 rounded hover:bg-gray-100 transition-colors"
+              className="text-sm font-bold text-gray-600 hover:text-gray-900 px-3 py-1 rounded hover:bg-gray-100 transition-colors"
             >
-              Logout
+              Logout 
             </button>
           </div>
           {/* Share Button */}
@@ -347,22 +349,11 @@ export const DocumentEditorPage: React.FC = () => {
       {currentDocument && user && (
         <ShareModal
           documentId={currentDocument.id}
-          userId={user.id}
           isOpen={isShareModalOpen}
           onClose={() => setIsShareModalOpen(false)}
           onShareSuccess={refreshDocuments}
         />
       )}
-
-      {showFloatingNewDoc && (
-        <button
-          onClick={handleNewDocument}
-          className="fixed bottom-6 left-6 z-50 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-full shadow-lg transition-colors"
-        >
-          + New Document
-        </button>
-      )}
-
 
       {/* Error Display */}
       {error && (

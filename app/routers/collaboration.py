@@ -1,9 +1,11 @@
-from fastapi import APIRouter, HTTPException, Depends, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from database import get_db
 from crud import check_document_access, update_document
 from model.Collaboration import Collaboration
+from model.User import User
+from auth import get_current_user, decode_access_token
 import redis.asyncio as redis
 import json
 import asyncio
@@ -20,11 +22,11 @@ async def get_redis():
 async def share_document(
     document_id: int,
     collaborator_id: int,
-    user_id: int = Query(..., description="Current user (must be owner)"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    doc = await check_document_access(db, document_id, user_id)
-    if not doc or doc.owner_id != user_id:
+    doc = await check_document_access(db, document_id, current_user.id)
+    if not doc or doc.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Only the owner can share this document.")
 
     # Prevent duplicate collaboration
@@ -48,11 +50,11 @@ async def share_document(
 async def remove_collaborator(
     document_id: int,
     collaborator_id: int,
-    user_id: int = Query(..., description="Current user (must be owner)"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    doc = await check_document_access(db, document_id, user_id)
-    if not doc or doc.owner_id != user_id:
+    doc = await check_document_access(db, document_id, current_user.id)
+    if not doc or doc.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Only the owner can remove collaborators.")
 
     existing = await db.execute(
@@ -72,15 +74,14 @@ async def remove_collaborator(
 # ---------- WEBSOCKET COLLABORATION ----------
 @router.websocket("/ws/collaboration/{document_id}")
 async def websocket_collaboration(websocket: WebSocket, document_id: int, db: AsyncSession = Depends(get_db)):
-    await websocket.accept()
-
     try:
-        user_id = int(websocket.query_params.get("user_id", 0))
-        if user_id == 0:
-            await websocket.close(code=1008, reason="user_id is required")
+        token = websocket.query_params.get("token")
+        if not token:
+            await websocket.close(code=1008, reason="token is required")
             return
+        user_id = decode_access_token(token)
     except (ValueError, TypeError):
-        await websocket.close(code=1008, reason="Invalid user_id")
+        await websocket.close(code=1008, reason="Invalid token")
         return
 
     # Validate document and user access
@@ -88,6 +89,8 @@ async def websocket_collaboration(websocket: WebSocket, document_id: int, db: As
     if not document:
         await websocket.close(code=1008, reason="Access denied")
         return
+
+    await websocket.accept()
 
     try:
         redis_client = await get_redis()
@@ -115,7 +118,8 @@ async def websocket_collaboration(websocket: WebSocket, document_id: int, db: As
             msg = await websocket.receive_text()
             try:
                 op = json.loads(msg)
-                print(f"Backend: Received operation from user {op.get('user_id')}, op: {op.get('op')}")
+                op["user_id"] = user_id
+                print(f"Backend: Received operation from user {user_id}, op: {op.get('op')}")
             except json.JSONDecodeError:
                 print(f"Backend: Failed to parse message: {msg}")
                 continue

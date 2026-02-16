@@ -2,16 +2,22 @@ from sqlalchemy.ext.asyncio import AsyncSession # All DB operations using this m
 from sqlalchemy import select
 from typing import Optional
 import hashlib, hmac 
+from passlib.context import CryptContext
 from model.Document import Document
 from model.Collaboration import Collaboration
 from model.User import User
 
 # ---------- PASSWORD ----------
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 def hash_password(password: str) -> str: # This is a return type hint
-    return hashlib.sha256(password.encode()).hexdigest()
+    return pwd_context.hash(password)
 
 def verify_password(password: str, hashed: str) -> bool:
-    return hmac.compare_digest(hash_password(password), hashed)
+    # Backward compatibility for legacy SHA-256 hashes already in DB.
+    if hashed.startswith("$2"):
+        return pwd_context.verify(password, hashed)
+    return hmac.compare_digest(hashlib.sha256(password.encode()).hexdigest(), hashed)
 
 # ---------- USERS ----------
 async def create_user(db: AsyncSession, username: str, email: str, password: str): 

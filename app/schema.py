@@ -22,7 +22,6 @@ class UserLogin(BaseModel):
 class DocumentCreate(BaseModel):
 	title: str
 	content: str
-	owner_id: int
 
 class DocumentUpdate(BaseModel):
 	title: Optional[str] = None

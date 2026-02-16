@@ -74,6 +74,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   const [showCommandMenu, setShowCommandMenu] = useState(false);
   const [commandMenuPosition, setCommandMenuPosition] = useState<{ x: number; y: number } | undefined>();
   const [selectedText, setSelectedText] = useState('');
+  const [aiStatusPosition, setAiStatusPosition] = useState<{ x: number; y: number } | null>(null);
   const aiStreamRangeRef = useRef<{ start: number; end: number } | null>(null);
   const aiStreamLengthRef = useRef(0);
   const aiStreamStartRef = useRef<number | null>(null);
@@ -288,11 +289,36 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
           aiStreamRangeRef.current = { start: to, end: to };
           aiStreamLengthRef.current = 0;
           aiStreamStartRef.current = to;
+
+          // Position inline AI status indicator near the caret, similar to Notion AI
+          const container = editorScrollRef.current;
+          try {
+            if (container) {
+              const coords = editor.view.coordsAtPos(to);
+              const rect = container.getBoundingClientRect();
+              const x = coords.left - rect.left;
+              const y = coords.bottom - rect.top + container.scrollTop + 6;
+              setAiStatusPosition({ x, y });
+            } else {
+              setAiStatusPosition(null);
+            }
+          } catch {
+            // If coords calculation fails, just hide the inline indicator
+            setAiStatusPosition(null);
+          }
         }
 
+        // For web search, don't send document context - only the question
+        // The backend will fetch web results and use only those
+        console.log('📝 DocumentEditor: Preparing AI request', {
+          useSearch,
+          prompt: prompt.substring(0, 50) + '...',
+          contextLength: useSearch ? 0 : context.length,
+        });
+        
         await aiApi.askStreaming(
           {
-            context,
+            context: useSearch ? '' : context,  // Empty context for web search
             question: prompt,
           },
           (chunk: string) => {
@@ -308,7 +334,18 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
             targetEditor
               .chain()
               .focus()
-              .insertContentAt({ from: end, to: end }, delta)
+              .insertContentAt(
+                { from: end, to: end },
+                [
+                  {
+                    type: 'text',
+                    text: delta,
+                    marks: [
+                      { type: 'highlight', attrs: { color: '#FEE2E2' } },
+                    ],
+                  },
+                ]
+              )
               .run();
             aiStreamRangeRef.current = { start, end: end + delta.length };
             aiStreamLengthRef.current = nextLength;
@@ -334,6 +371,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
         aiStreamStartRef.current = null;
       } finally {
         setIsStreaming(false);
+        setAiStatusPosition(null);
       }
     },
     []
@@ -380,6 +418,30 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
     aiStreamLengthRef.current = 0;
   }, []);
 
+  // If the user starts typing while an AI suggestion is visible, automatically
+  // discard the suggestion and its highlight (Notion-style behavior).
+  useEffect(() => {
+    const handleUserTyping = (event: KeyboardEvent) => {
+      if (!showAiPanel || isStreaming) return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+      const isTextishKey =
+        event.key.length === 1 ||
+        event.key === 'Backspace' ||
+        event.key === 'Enter' ||
+        event.key === 'Delete' ||
+        event.key === 'Tab';
+
+      if (!isTextishKey) return;
+
+      // Remove the AI suggestion; let the keypress go through to the editor
+      handleDismissResponse();
+    };
+
+    window.addEventListener('keydown', handleUserTyping);
+    return () => window.removeEventListener('keydown', handleUserTyping);
+  }, [showAiPanel, isStreaming, handleDismissResponse]);
+
   const handleAcceptResponse = useCallback(() => {
     const editor = editorRef.current;
     if (!editor) return;
@@ -387,7 +449,17 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
     const textToInsert = streamingResponse || aiResponse || '';
     if (range && textToInsert) {
       const html = markdownToHtml(textToInsert);
-      editor.chain().focus().insertContentAt({ from: range.start, to: range.end }, html).run();
+      // Remove highlight mark by replacing content (insertContentAt removes marks)
+      // First, select the range and unset the highlight mark
+      const { tr } = editor.state;
+      tr.removeMark(range.start, range.end, editor.schema.marks.highlight);
+      editor.view.dispatch(tr);
+      // Then replace with final content
+      editor
+        .chain()
+        .focus()
+        .insertContentAt({ from: range.start, to: range.end }, html)
+        .run();
     }
     setAiResponse(null);
     setStreamingResponse('');
@@ -407,10 +479,19 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
     const textToInsert = streamingResponse || aiResponse || '';
     if (!textToInsert) return;
 
-    // Remove current streamed content.
-    editor.chain().focus().insertContentAt({ from: range.start, to: range.end }, '').run();
+    // Remove highlight mark and delete current streamed content
+    const { tr } = editor.state;
+    tr.removeMark(range.start, range.end, editor.schema.marks.highlight);
+    editor.view.dispatch(tr);
+    
+    // Delete the content
+    editor
+      .chain()
+      .focus()
+      .insertContentAt({ from: range.start, to: range.end }, '')
+      .run();
 
-    // Insert a new paragraph below the original selection end.
+    // Insert a new paragraph below the original selection end (without highlight).
     const { to } = selectionRef.current || editor.state.selection;
     const html = markdownToHtml(textToInsert);
     editor.chain().focus().insertContentAt(to, html).run();
@@ -449,6 +530,32 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
             showHeader={false}
             editorRef={editorRef}
           />
+
+          {/* Inline AI status indicator near the edited block (Notion-style) */}
+          {isStreaming && aiStatusPosition && !streamingResponse && (
+            <div
+              className="absolute z-40"
+              style={{
+                left: aiStatusPosition.x,
+                top: aiStatusPosition.y,
+              }}
+            >
+              <div className="inline-flex items-center gap-2 px-1 py-0.5 text-xs text-blue-700">
+                <span>Generate</span>
+                <span className="flex gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce" />
+                  <span
+                    className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce"
+                    style={{ animationDelay: '0.1s' }}
+                  />
+                  <span
+                    className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce"
+                    style={{ animationDelay: '0.2s' }}
+                  />
+                </span>
+              </div>
+            </div>
+          )}
 
           {(aiResponse !== null || streamingResponse || isStreaming) && (
             <div ref={responseRef} className="mt-4 mb-4 px-6 hidden">

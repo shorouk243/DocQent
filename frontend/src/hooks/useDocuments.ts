@@ -14,7 +14,7 @@ import {
  * Custom hook for managing documents
  * Provides state and functions for document CRUD operations
  */
-export const useDocuments = (userId: number | null) => {
+export const useDocuments = (isAuthenticated: boolean) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
   const [loading, setLoading] = useState(false);
@@ -22,18 +22,18 @@ export const useDocuments = (userId: number | null) => {
 
   // Fetch all documents for the user on mount or when userId changes
   useEffect(() => {
-    if (userId) {
+    if (isAuthenticated) {
       fetchAllDocuments();
     }
-  }, [userId]);
+  }, [isAuthenticated]);
 
   // Fetch all documents (owned + shared)
   const fetchAllDocuments = useCallback(async () => {
-    if (!userId) return;
+    if (!isAuthenticated) return;
     setLoading(true);
     setError(null);
     try {
-      const docs = await getDocuments(userId);
+      const docs = await getDocuments();
       setDocuments(docs);
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || 'Failed to fetch documents';
@@ -42,7 +42,7 @@ export const useDocuments = (userId: number | null) => {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [isAuthenticated]);
 
   // Fetch a single document
   const fetchDocument = useCallback(async (documentId: number) => {
@@ -81,21 +81,21 @@ export const useDocuments = (userId: number | null) => {
 
   // Refresh documents list (useful after sharing)
   const refreshDocuments = useCallback(() => {
-    if (userId) {
+    if (isAuthenticated) {
       fetchAllDocuments();
     }
-  }, [userId, fetchAllDocuments]);
+  }, [isAuthenticated, fetchAllDocuments]);
 
   // Update a document
   // silent: if true, don't show loading overlay (for debounced saves)
   const updateCurrentDocument = useCallback(
-    async (documentId: number, update: DocumentUpdate, userId: number, silent: boolean = false) => {
+    async (documentId: number, update: DocumentUpdate, silent: boolean = false) => {
       if (!silent) {
         setLoading(true);
       }
       setError(null);
       try {
-        const updated = await updateDocument(documentId, update, userId);
+        const updated = await updateDocument(documentId, update);
         setCurrentDocument(updated);
         setDocuments((prev) =>
           prev.map((doc) => (doc.id === documentId ? updated : doc))
@@ -116,11 +116,11 @@ export const useDocuments = (userId: number | null) => {
 
   // Delete a document
   const deleteCurrentDocument = useCallback(
-    async (documentId: number, userId: number) => {
+    async (documentId: number) => {
       setLoading(true);
       setError(null);
       try {
-        await deleteDocument(documentId, userId);
+        await deleteDocument(documentId);
         setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
         if (currentDocument?.id === documentId) {
           setCurrentDocument(null);
@@ -149,4 +149,3 @@ export const useDocuments = (userId: number | null) => {
     refreshDocuments,
   };
 };
-

@@ -25,14 +25,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onRenameCurrent,
 }) => {
   const [draftTitle, setDraftTitle] = React.useState('');
+  const sortedDocuments = React.useMemo(() => {
+    return [...documents].sort((a, b) => {
+      const aTime = new Date(a.created_at).getTime();
+      const bTime = new Date(b.created_at).getTime();
+      return bTime - aTime;
+    });
+  }, [documents]);
 
   React.useEffect(() => {
     setDraftTitle(currentDocument?.title || '');
   }, [currentDocument?.id, currentDocument?.title]);
   return (
     <div className="w-64 flex-shrink-0 bg-gray-50 border-r border-gray-200 h-screen flex flex-col sticky top-0">
-      {/* New Document Button (top) */}
-      <div className="p-4 border-b border-gray-200">
+      {/* New Document Button (fixed in viewport) */}
+      <div className="fixed top-14 left-0 w-64 z-40 bg-gray-50 border-b border-gray-200 p-4">
         <button
           onClick={onNewDocument}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
@@ -42,25 +49,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Document List */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pt-20">
         <div className="p-2">
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2 py-2">
+          <div className="sticky top-0 z-10 bg-gray-50">
+            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2 py-2">
             Documents
-          </h2>
+            </h2>
+          </div>
           {documents.length === 0 ? (
             <div className="text-sm text-gray-500 px-2 py-4 text-center">
               No documents yet. Create one to get started!
             </div>
           ) : (
             <div className="space-y-1">
-              {documents.map((doc) => (
+              {sortedDocuments.map((doc) => (
                 <div
                   key={doc.id}
-                  className={`group flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors ${
-                    currentDocument?.id === doc.id
-                      ? 'bg-blue-50 border border-blue-200'
-                      : ''
-                  }`}
+                  className="group flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -77,7 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <div className="flex-1 min-w-0">
                     {currentDocument?.id === doc.id ? (
                       <input
-                        className="w-full text-sm font-medium text-gray-900 bg-white border border-blue-200 rounded px-1.5 py-0.5 outline-none focus:border-blue-400"
+                        className="w-full text-sm font-medium text-gray-900 bg-transparent border border-transparent rounded px-0 py-0 outline-none focus:border-gray-300"
                         value={draftTitle}
                         placeholder="Untitled Document"
                         onChange={(e) => {

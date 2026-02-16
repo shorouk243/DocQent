@@ -3,7 +3,6 @@ import { shareDocument, removeCollaborator } from '../api/collaboration';
 
 interface ShareModalProps {
   documentId: number;
-  userId: number;
   isOpen: boolean;
   onClose: () => void;
   onShareSuccess?: () => void; // Callback to refresh documents list
@@ -15,7 +14,6 @@ interface ShareModalProps {
  */
 export const ShareModal: React.FC<ShareModalProps> = ({
   documentId,
-  userId,
   isOpen,
   onClose,
   onShareSuccess,
@@ -39,7 +37,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     setSuccess(null);
 
     try {
-      await shareDocument(documentId, id, userId);
+      await shareDocument(documentId, id);
       setSuccess(`Document shared with user ${id}`);
       setCollaboratorId('');
       // Refresh documents list if callback provided
@@ -70,7 +68,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     setSuccess(null);
 
     try {
-      await removeCollaborator(documentId, id, userId);
+      await removeCollaborator(documentId, id);
       setSuccess(`Collaborator ${id} removed`);
       setCollaboratorId('');
       setTimeout(() => {
@@ -157,4 +155,3 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     </div>
   );
 };
-

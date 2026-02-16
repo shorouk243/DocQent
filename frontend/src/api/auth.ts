@@ -20,7 +20,8 @@ export interface LoginData {
 
 export interface LoginResponse {
   message: string;
-  user_id: number;
+  access_token: string;
+  token_type: string;
 }
 
 /**
@@ -40,9 +41,8 @@ export const login = async (data: LoginData): Promise<LoginResponse> => {
   return response.data;
 };
 
-// Get user by ID (to fetch full user details after login)
-export const getUser = async (userId: number): Promise<User> => {
-  const response = await apiClient.get<User>(`/users/${userId}`);
+// Get current authenticated user
+export const getCurrentUser = async (): Promise<User> => {
+  const response = await apiClient.get<User>('/users/me');
   return response.data;
 };
-

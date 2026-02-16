@@ -5,6 +5,7 @@ import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
+import Highlight from '@tiptap/extension-highlight';
 import { Node, mergeAttributes } from '@tiptap/core';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
@@ -311,6 +312,7 @@ export const NotionEditor: React.FC<NotionEditorProps> = ({
       }),
       TextStyle,
       Color,
+      Highlight.configure({ multicolor: true }),
       Link.configure({
         openOnClick: true,
         autolink: true,

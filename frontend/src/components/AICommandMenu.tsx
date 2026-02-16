@@ -75,6 +75,7 @@ export const AICommandMenu: React.FC<AICommandMenuProps> = ({
   const [useSearch, setUseSearch] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const useSearchRef = useRef(false);
 
   // Reset when menu opens/closes
   useEffect(() => {
@@ -82,10 +83,15 @@ export const AICommandMenu: React.FC<AICommandMenuProps> = ({
       setInputValue('');
       setSelectedActionIndex(null);
       setUseSearch(false);
+      useSearchRef.current = false;
       // Focus input after animation
       setTimeout(() => inputRef.current?.focus(), 150);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    useSearchRef.current = useSearch;
+  }, [useSearch]);
 
   // Handle action selection
   const handleActionSelect = (action: AICommand) => {
@@ -93,14 +99,21 @@ export const AICommandMenu: React.FC<AICommandMenuProps> = ({
     if (selectedText) {
       prompt += `\n\n${selectedText}`;
     }
-    onSubmit(prompt, useSearch);
+    const useWeb = useSearchRef.current;
+    console.log('📝 AICommandMenu: Submitting action', { action: action.label, useSearch: useWeb });
+    onSubmit(prompt, useWeb);
   };
 
   // Handle custom prompt submission
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (inputValue.trim()) {
-      onSubmit(inputValue.trim(), useSearch);
+      const useWeb = useSearchRef.current;
+      console.log('📝 AICommandMenu: Submitting custom prompt', { 
+        prompt: inputValue.trim().substring(0, 50) + '...', 
+        useSearch: useWeb 
+      });
+      onSubmit(inputValue.trim(), useWeb);
     }
   };
 
@@ -121,10 +134,10 @@ export const AICommandMenu: React.FC<AICommandMenuProps> = ({
         );
       } else if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        if (selectedActionIndex !== null && AI_ACTIONS[selectedActionIndex]) {
-          handleActionSelect(AI_ACTIONS[selectedActionIndex]);
-        } else if (inputValue.trim()) {
+        if (inputValue.trim()) {
           handleSubmit();
+        } else if (selectedActionIndex !== null && AI_ACTIONS[selectedActionIndex]) {
+          handleActionSelect(AI_ACTIONS[selectedActionIndex]);
         }
       } else if (e.key === 'Escape') {
         e.preventDefault();
@@ -226,19 +239,27 @@ export const AICommandMenu: React.FC<AICommandMenuProps> = ({
                 style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
               />
             </div>
-            <div className="px-4 pb-3">
+            <div className="px-4 pb-3 flex items-center justify-between">
               <button
                 type="button"
-                onClick={() => setUseSearch((prev) => !prev)}
+                onClick={() => {
+                  const newValue = !useSearch;
+                  setUseSearch(newValue);
+                  useSearchRef.current = newValue;
+                  console.log('🌐 AICommandMenu: Web search toggled:', newValue);
+                }}
                 className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                   useSearch
-                    ? 'border-gray-900 bg-gray-900 text-white'
+                    ? 'border-blue-600 bg-blue-600 text-white shadow-sm'
                     : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
                 }`}
                 aria-pressed={useSearch}
               >
-                Use web
+                {useSearch ? '✓ Use web' : 'Use web'}
               </button>
+              {useSearch && (
+                <span className="text-xs text-blue-600 font-medium">Web search enabled</span>
+              )}
             </div>
           </form>
 

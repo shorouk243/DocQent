@@ -14,6 +14,7 @@ import { websocketService, WebSocketOperation } from '../services/websocket';
 export const useWebSocket = (
   documentId: number | null,
   userId: number | null,
+  accessToken: string | null,
   onOperation: (operation: WebSocketOperation) => void
 ) => {
   const onOperationRef = useRef(onOperation);
@@ -28,17 +29,18 @@ export const useWebSocket = (
   // Send operation function
   const sendOperation = useCallback(
     (operation: WebSocketOperation) => {
-      if (documentId && userId) {
+      if (documentId && userId && accessToken) {
         websocketService.sendOperation(operation);
       }
     },
-    [documentId, userId]
+    [documentId, userId, accessToken]
   );
 
   // Track previous IDs to prevent unnecessary reconnections
-  const prevIdsRef = useRef<{ documentId: number | null; userId: number | null }>({
+  const prevIdsRef = useRef<{ documentId: number | null; userId: number | null; accessToken: string | null }>({
     documentId: null,
     userId: null,
+    accessToken: null,
   });
 
   // Connect/disconnect effect
@@ -46,9 +48,10 @@ export const useWebSocket = (
     // Only reconnect if IDs actually changed
     const idsChanged = 
       prevIdsRef.current.documentId !== documentId || 
-      prevIdsRef.current.userId !== userId;
+      prevIdsRef.current.userId !== userId ||
+      prevIdsRef.current.accessToken !== accessToken;
 
-    if (documentId && userId) {
+    if (documentId && userId && accessToken) {
       // Only connect if IDs changed or not already connected
       if (idsChanged || !websocketService.isConnected()) {
       console.log(`🔗 useWebSocket: Connecting to document ${documentId} as user ${userId}`);
@@ -75,13 +78,14 @@ export const useWebSocket = (
       websocketService.connect(
         documentId,
         userId,
+        accessToken,
         handleMessage,
         handleError,
         handleClose
       );
 
         // Update previous IDs
-        prevIdsRef.current = { documentId, userId };
+        prevIdsRef.current = { documentId, userId, accessToken };
       }
 
       // Check connection status periodically (only if connected)
@@ -100,7 +104,7 @@ export const useWebSocket = (
     } else {
       setIsConnected(false);
       // Update previous IDs even when null
-      prevIdsRef.current = { documentId, userId };
+      prevIdsRef.current = { documentId, userId, accessToken };
       // Clean up interval if no connection needed
       if (checkIntervalRef.current) {
         clearInterval(checkIntervalRef.current);
@@ -119,14 +123,15 @@ export const useWebSocket = (
       // Note: On unmount, this will also run but that's fine - we want to disconnect
       const currentIdsChanged = 
         prevIdsRef.current.documentId !== documentId || 
-        prevIdsRef.current.userId !== userId;
+        prevIdsRef.current.userId !== userId ||
+        prevIdsRef.current.accessToken !== accessToken;
       
-      if (currentIdsChanged || !documentId || !userId) {
+      if (currentIdsChanged || !documentId || !userId || !accessToken) {
         websocketService.disconnect();
         setIsConnected(false);
       }
       };
-  }, [documentId, userId]);
+  }, [documentId, userId, accessToken]);
 
   return { sendOperation, isConnected };
 };

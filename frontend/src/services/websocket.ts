@@ -4,7 +4,7 @@
  * This service manages WebSocket connections for real-time document editing.
  * 
  * FLOW:
- * 1. Connect to: ws://localhost:8000/ws/collaboration/{document_id}?user_id={user_id}
+ * 1. Connect to: ws://localhost:8000/ws/collaboration/{document_id}?token={jwt}
  * 2. On text change in editor:
  *    - Calculate the operation (insert/delete) with position
  *    - Send operation via WebSocket: { user_id, op, position, text, length? }
@@ -36,6 +36,7 @@ class WebSocketService {
   private ws: WebSocket | null = null;
   private documentId: number | null = null;
   private userId: number | null = null;
+  private token: string | null = null;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
@@ -47,6 +48,7 @@ class WebSocketService {
   connect(
     documentId: number,
     userId: number,
+    token: string,
     onMessage: WebSocketMessageHandler,
     onError?: WebSocketErrorHandler,
     onClose?: WebSocketCloseHandler
@@ -58,10 +60,11 @@ class WebSocketService {
 
     this.documentId = documentId;
     this.userId = userId;
+    this.token = token;
     this.isManualClose = false;
     this.reconnectAttempts = 0;
 
-    const wsUrl = `ws://localhost:8000/ws/collaboration/${documentId}?user_id=${userId}`;
+    const wsUrl = `ws://localhost:8000/ws/collaboration/${documentId}?token=${encodeURIComponent(token)}`;
     
     console.log(`🔌 Attempting WebSocket connection:`);
     console.log(`   URL: ${wsUrl}`);
@@ -120,8 +123,8 @@ class WebSocketService {
           console.log(`Reconnecting in ${delay}ms... (attempt ${this.reconnectAttempts})`);
           
           setTimeout(() => {
-            if (this.documentId && this.userId) {
-              this.connect(this.documentId, this.userId, onMessage, onError, onClose);
+            if (this.documentId && this.userId && this.token) {
+              this.connect(this.documentId, this.userId, this.token, onMessage, onError, onClose);
             }
           }, delay);
         }
@@ -188,6 +191,7 @@ class WebSocketService {
     }
     this.documentId = null;
     this.userId = null;
+    this.token = null;
   }
 
   /**

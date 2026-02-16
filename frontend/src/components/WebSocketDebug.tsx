@@ -25,7 +25,7 @@ export const WebSocketDebug: React.FC<WebSocketDebugProps> = ({
     );
   }
 
-  const wsUrl = `ws://localhost:8000/ws/collaboration/${documentId}?user_id=${userId}`;
+  const wsUrl = `ws://localhost:8000/ws/collaboration/${documentId}?token=<jwt>`;
 
   return (
     <div className="border border-gray-200 rounded p-2 bg-gray-50 text-xs">
@@ -76,4 +76,3 @@ export const WebSocketDebug: React.FC<WebSocketDebugProps> = ({
     </div>
   );
 };
-

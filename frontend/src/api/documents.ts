@@ -11,7 +11,6 @@ export interface Document {
 export interface DocumentCreate {
   title: string;
   content: string;
-  owner_id: number;
 }
 
 export interface DocumentUpdate {
@@ -24,9 +23,9 @@ export interface DocumentUpdate {
  * Handles all REST API calls for document CRUD operations
  */
 
-// Get all documents for a user (owned + shared)
-export const getDocuments = async (userId: number): Promise<Document[]> => {
-  const response = await apiClient.get<Document[]>(`/documents?user_id=${userId}`);
+// Get all documents for authenticated user (owned + shared)
+export const getDocuments = async (): Promise<Document[]> => {
+  const response = await apiClient.get<Document[]>('/documents');
   return response.data;
 };
 
@@ -47,25 +46,17 @@ export const createDocument = async (
 // Update an existing document
 export const updateDocument = async (
   documentId: number,
-  update: DocumentUpdate,
-  userId: number
+  update: DocumentUpdate
 ): Promise<Document> => {
-  const response = await apiClient.put<Document>(
-    `/documents/${documentId}?user_id=${userId}`,
-    update
-  );
+  const response = await apiClient.put<Document>(`/documents/${documentId}`, update);
   return response.data;
 };
 
 // Delete a document
-export const deleteDocument = async (
-  documentId: number,
-  userId: number
-): Promise<void> => {
-  await apiClient.delete(`/documents/${documentId}?user_id=${userId}`);
+export const deleteDocument = async (documentId: number): Promise<void> => {
+  await apiClient.delete(`/documents/${documentId}`);
 };
 
 // Note: Backend doesn't have a list endpoint yet
 // For now, we'll work with individual document fetches
 // You may want to add: GET /documents?owner_id={owner_id} to the backend
-

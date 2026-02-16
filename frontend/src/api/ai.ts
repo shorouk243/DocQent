@@ -27,6 +27,14 @@ export const aiApi = {
     try {
       const baseUrl = apiClient.defaults.baseURL || '';
       const endpoint = options?.useWeb ? '/ai/ask_web' : '/ai/ask';
+      
+      console.log('🌐 Frontend: Sending AI request', {
+        endpoint,
+        useWeb: options?.useWeb,
+        question: request.question,
+        contextLength: request.context?.length || 0,
+      });
+      
       const response = await fetch(`${baseUrl}${endpoint}`, {
         method: 'POST',
         headers: {
