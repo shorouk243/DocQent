@@ -8,17 +8,21 @@ GraniteDocs is a professional-grade, real-time collaborative editor that transfo
 
 - Documentation-First AI: Powered by IBM Granite-4.0, specifically tuned to avoid conversational filler and output structured Markdown.
 - Web-Augmented Generation (RAG): Real-time web search integration via Tavily AI to ensure documentation is grounded in current facts.
-- Live Collaboration: Multi-user editing synchronized via WebSockets, enabling teams to build documentation together.
-- Stateless JWT Authentication: Secure, signed tokens replace vulnerable local-storage-based identity.
+- Live Collaboration: Multi-user editing via WebSockets, enabling teams to build documentation together.
+- JWT Authentication: Secure, signed access tokens for protected API and WebSocket routes.
 - IDOR Protection: Every request is verified server-side to ensure users can only access their own documents.
 - Bcrypt Hashing: Modern password protection with a legacy SHA-256 fallback for seamless user migration.
 - Streaming Responses: Real-time token streaming using FastAPI `StreamingResponse` for zero-latency feedback.
+
+## Evaluation
+
+- LLM-as-a-Judge: Response quality was evaluated using the Gemini model as an external judge.
+- Perplexity: Language-model perplexity was used as an additional quantitative fluency metric.
 
 DocQent is a full-stack collaborative documentation platform with:
 - Real-time multi-user editing (WebSocket + Redis)
 - Authentication (JWT)
 - Document ownership and sharing
-- AI assistant endpoints backed by a local LLM (`llama-cpp`) and optional web search grounding
 
 ## Tech Stack
 
@@ -103,12 +107,6 @@ API docs: `http://localhost:8000/docs`
 - `WS /ws/collaboration/{document_id}` - real-time collaboration
 - `POST /ai/ask` - local LLM answer
 - `POST /ai/ask_web` - web-grounded answer
-
-## Deployment Notes
-
-- Never commit secrets (`.env` is already in `.gitignore`).
-- Move hardcoded AI model path to an environment variable before production.
-- Configure CORS origins for your deployed frontend domain.
 
 ## License
 
