@@ -7,6 +7,7 @@ GraniteDocs is a professional-grade, real-time collaborative editor that transfo
 ## Key Features
 
 - Documentation-First AI: Powered by IBM Granite-4.0, specifically tuned to avoid conversational filler and output structured Markdown.
+- Parameter-Efficient Fine-Tuning: Model adaptation performed using QLoRA for efficient domain tuning with lower GPU memory usage.
 - Web-Augmented Generation (RAG): Real-time web search integration via Tavily AI to ensure documentation is grounded in current facts.
 - Live Collaboration: Multi-user editing via WebSockets, enabling teams to build documentation together.
 - JWT Authentication: Secure, signed access tokens for protected API and WebSocket routes.
