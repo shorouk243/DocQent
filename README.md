@@ -1,6 +1,6 @@
 # DocQent
 
-## GraniteDocs: Collaborative AI Documentation Engine
+## DocQent: Collaborative AI Documentation Engine
 
 GraniteDocs is a professional-grade, real-time collaborative editor that transforms the standard "AI Chat" experience into a structured Technical Documentation Engine. Built with a focus on data grounding, precision, and enterprise-level security.
 
@@ -30,7 +30,7 @@ DocQent is a full-stack collaborative documentation platform with:
 - Backend: FastAPI, SQLAlchemy (async), MySQL, Redis
 - Frontend: React + TypeScript + Vite
 - Auth: JWT (`python-jose`)
-- AI: `llama-cpp-python`, Tavily API (optional)
+- AI: llama-cpp-python, IBM Granite-4.0, Tavily API
 
 ## Project Structure
 
