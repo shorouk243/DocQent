@@ -111,7 +111,7 @@ API docs: `http://localhost:8000/docs`
 
 > **Watch the Real-Time Demo:**
 > ![DocQent Demo](assets/demo.gif)>
-> 
+
 ## License
 
 Add your preferred license (for example: MIT) in a `LICENSE` file.
