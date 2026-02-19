@@ -1,7 +1,9 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, UniqueConstraint
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
 from database import Base
+from sqlalchemy import (Column, DateTime, ForeignKey, Integer,
+                        UniqueConstraint)
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
 
 class Collaboration(Base):
 	__tablename__ = "collaborations"
@@ -12,10 +14,6 @@ class Collaboration(Base):
 	user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 	created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-	document = relationship("Document", back_populates="collaborations") # back_populates is a SQLAlchemy relationship that allows us to access the document from the collaboration and vice versa
-	user = relationship("User", back_populates="collaborations") # back_populates is a SQLAlchemy relationship that allows us to access the user from the collaboration and vice versa, If you change the relationship on one side, SQLAlchemy updates the other side automatically in memory.
+	document = relationship("Document", back_populates="collaborations") 
+	user = relationship("User", back_populates="collaborations") 
 
-
-# ORM relationships
-# They are NOT database columns
-# They exist to make querying and navigation easy in Python

@@ -1,11 +1,6 @@
 import apiClient from './client';
 
-/**
- * Collaboration API service
- * Handles sharing and removing collaborators from documents
- */
 
-// Share a document with a collaborator
 export const shareDocument = async (
   documentId: number,
   collaboratorId: number
@@ -16,7 +11,6 @@ export const shareDocument = async (
   return response.data;
 };
 
-// Remove a collaborator from a document
 export const removeCollaborator = async (
   documentId: number,
   collaboratorId: number

@@ -2,12 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-/**
- * Login Page
- * 
- * Allows users to log in with username and password.
- * On success, redirects to the document editor.
- */
 export const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -22,7 +16,6 @@ export const Login: React.FC = () => {
     setError(null);
     setLoading(true);
 
-    // Basic validation
     if (!username.trim() || !password.trim()) {
       setError('Please fill in all fields');
       setLoading(false);
@@ -31,7 +24,6 @@ export const Login: React.FC = () => {
 
     try {
       await login(username, password);
-      // Redirect to documents page on success
       navigate('/documents');
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
@@ -45,7 +37,7 @@ export const Login: React.FC = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to Doqent
+            Sign in to Docqent
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Or{' '}

@@ -7,10 +7,6 @@ interface ToolbarProps {
   onHeading: (level: 1 | 2 | 3 | 4) => void;
 }
 
-/**
- * Top toolbar component with formatting options
- * Basic formatting buttons (Bold, Italic, Underline, Headings)
- */
 export const Toolbar: React.FC<ToolbarProps> = ({
   onBold,
   onItalic,
@@ -19,7 +15,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 }) => {
   return (
     <div className="border-b border-gray-200 bg-white px-4 py-2 flex items-center gap-2">
-      {/* Bold */}
       <button
         onClick={onBold}
         className="p-2 hover:bg-gray-100 rounded transition-colors"
@@ -30,7 +25,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </svg>
       </button>
 
-      {/* Italic */}
       <button
         onClick={onItalic}
         className="p-2 hover:bg-gray-100 rounded transition-colors"
@@ -41,7 +35,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </svg>
       </button>
 
-      {/* Underline */}
       <button
         onClick={onUnderline}
         className="p-2 hover:bg-gray-100 rounded transition-colors"
@@ -52,10 +45,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </svg>
       </button>
 
-      {/* Divider */}
       <div className="w-px h-6 bg-gray-300 mx-1" />
 
-      {/* Headings */}
       <div className="flex items-center gap-1">
         <button
           onClick={() => onHeading(1)}

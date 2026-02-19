@@ -1,6 +1,8 @@
-from pydantic import BaseModel # smart data container, When you create a class that inherits from BaseModel
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel
+
 
 class UserCreate(BaseModel):
 	username: str
@@ -35,23 +37,3 @@ class DocumentResponse(BaseModel):
 	created_at: datetime
 	class Config:
 		from_attributes = True
-
-# Config is a special inner class in a Pydantic model
-# It is used to configure how the model behaves
-# Think of it as settings / rules for that Pydantic model
-
-# It only tells Pydantic how to read and validate data
-
-# SQLAlchemy
-# ➡ returns Python objects
-
-# Pydantic
-# ➡ validates & serializes data
-# ➡ prefers dicts
-# ➡ BUT can read objects if from_attributes = True
-
-# FastAPI
-# ➡ uses Pydantic to convert output → JSON
-
-# Serialization Convert to dict / JSON
-# Deserialization Convert from dict / JSON

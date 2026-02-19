@@ -1,37 +1,34 @@
-from sqlalchemy.ext.asyncio import AsyncSession # All DB operations using this must be awaited.
-from sqlalchemy import select
+import hashlib
+import hmac
 from typing import Optional
-import hashlib, hmac 
-from passlib.context import CryptContext
-from model.Document import Document
-from model.Collaboration import Collaboration
-from model.User import User
 
-# ---------- PASSWORD ----------
+from model.Collaboration import Collaboration
+from model.Document import Document
+from model.User import User
+from passlib.context import CryptContext
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def hash_password(password: str) -> str: # This is a return type hint
+def hash_password(password: str) -> str: 
     return pwd_context.hash(password)
 
 def verify_password(password: str, hashed: str) -> bool:
-    # Backward compatibility for legacy SHA-256 hashes already in DB.
     if hashed.startswith("$2"):
         return pwd_context.verify(password, hashed)
     return hmac.compare_digest(hashlib.sha256(password.encode()).hexdigest(), hashed)
 
-# ---------- USERS ----------
 async def create_user(db: AsyncSession, username: str, email: str, password: str): 
     user = User(
         username=username,
         email=email,
         password=hash_password(password)
-    ) # Create a User ORM object
-      # Password is hashed before saving
-      # No DB call yet — just Python object
+    ) 
     db.add(user)
     await db.commit()
-    await db.refresh(user) # Now user.id exists (auto-generated)
-    return user # Returns SQLAlchemy User object
+    await db.refresh(user) 
+    return user 
 
 async def get_user_by_username(db: AsyncSession, username: str) -> Optional[User]:
     result = await db.execute(select(User).where(User.username == username))
@@ -41,7 +38,6 @@ async def get_user_by_username(db: AsyncSession, username: str) -> Optional[User
 async def get_user_by_id(db: AsyncSession, user_id: int) -> Optional[User]:
     result = await db.execute(select(User).where(User.id == user_id))
     return result.scalars().first()
-    print(result)
 
 async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
     result = await db.execute(select(User).where(User.email == email))
@@ -53,7 +49,6 @@ async def delete_user_by_id(db: AsyncSession, user_id: int):
         await db.delete(user)
         await db.commit()
 
-# ---------- DOCUMENTS ----------
 async def create_document(db: AsyncSession, title: str, content: str, owner_id: int):
     doc = Document(title=title, content=content, owner_id=owner_id)
     db.add(doc)
@@ -83,7 +78,6 @@ async def delete_document(db: AsyncSession, document_id: int):
         await db.delete(doc)
         await db.commit()
 
-# ---------- ACCESS ----------
 async def check_document_access(db: AsyncSession, document_id: int, user_id: int) -> Optional[Document]:
     doc = await get_document(db, document_id)
     if not doc:

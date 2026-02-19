@@ -15,35 +15,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const USER_STORAGE_KEY = 'collaborative_docs_user';
 
-/**
- * AuthContext Provider
- * 
- * Manages authentication state and provides auth methods to the app.
- * 
- * AUTH FLOW:
- * 1. On mount: Check localStorage for saved user
- * 2. If user exists: Fetch full user details from backend
- * 3. Login/Register: Save user to state and localStorage
- * 4. Logout: Clear state and localStorage
- */
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Load user from localStorage on mount
   useEffect(() => {
     const loadUser = async () => {
       try {
         const savedToken = getAccessToken();
         if (savedToken) {
-          // Fetch fresh user data using token
           try {
             const fullUser = await getCurrentUser();
             setUser(fullUser);
             localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(fullUser));
           } catch (error) {
-            // Invalid/expired token, clear storage
-            console.error('Failed to fetch user:', error);
             localStorage.removeItem(USER_STORAGE_KEY);
             clearAccessToken();
           }
@@ -51,7 +36,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           localStorage.removeItem(USER_STORAGE_KEY);
         }
       } catch (error) {
-        console.error('Failed to load user:', error);
         localStorage.removeItem(USER_STORAGE_KEY);
         clearAccessToken();
       } finally {
@@ -62,7 +46,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loadUser();
   }, []);
 
-  // Login function
   const login = async (username: string, password: string): Promise<void> => {
     try {
       const response = await loginAPI({ username, password });
@@ -77,7 +60,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // Register function
   const register = async (username: string, email: string, password: string): Promise<void> => {
     try {
       await registerAPI({ username, email, password });
@@ -88,7 +70,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // Logout function
   const logout = (): void => {
     setUser(null);
     localStorage.removeItem(USER_STORAGE_KEY);
@@ -107,10 +88,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-/**
- * Hook to use AuthContext
- * Throws error if used outside AuthProvider
- */
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {

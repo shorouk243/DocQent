@@ -24,24 +24,17 @@ export interface LoginResponse {
   token_type: string;
 }
 
-/**
- * Authentication API service
- * Handles user registration and login
- */
 
-// Register a new user
 export const register = async (data: RegisterData): Promise<User> => {
   const response = await apiClient.post<User>('/users/register', data);
   return response.data;
 };
 
-// Login user
 export const login = async (data: LoginData): Promise<LoginResponse> => {
   const response = await apiClient.post<LoginResponse>('/users/login', data);
   return response.data;
 };
 
-// Get current authenticated user
 export const getCurrentUser = async (): Promise<User> => {
   const response = await apiClient.get<User>('/users/me');
   return response.data;

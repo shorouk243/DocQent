@@ -2,12 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-/**
- * Register Page
- * 
- * Allows new users to create an account.
- * Validates inputs and shows backend error messages.
- */
 export const Register: React.FC = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -25,7 +19,6 @@ export const Register: React.FC = () => {
     setError(null);
     setLoading(true);
 
-    // Client-side validation
     if (!username.trim() || !email.trim() || !password.trim()) {
       setError('Please fill in all fields');
       setLoading(false);
@@ -59,7 +52,6 @@ export const Register: React.FC = () => {
       return;
     }
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError('Please enter a valid email address');
@@ -69,7 +61,6 @@ export const Register: React.FC = () => {
 
     try {
       await register(username, email, password);
-      // Redirect to documents page on success
       navigate('/documents');
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');

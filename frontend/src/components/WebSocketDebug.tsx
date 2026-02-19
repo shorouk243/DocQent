@@ -6,10 +6,6 @@ interface WebSocketDebugProps {
   isConnected: boolean;
 }
 
-/**
- * WebSocket Debug Component
- * Shows detailed WebSocket connection information
- */
 export const WebSocketDebug: React.FC<WebSocketDebugProps> = ({
   documentId,
   userId,

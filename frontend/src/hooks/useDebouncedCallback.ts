@@ -1,13 +1,5 @@
 import { useRef, useCallback, useEffect } from 'react';
 
-/**
- * Returns a debounced version of the callback that delays invoking it until
- * after `delay` ms have elapsed since the last call.
- *
- * @param callback - Function to debounce (can be async)
- * @param delay - Delay in milliseconds
- * @returns Debounced function with the same signature as the callback
- */
 export function useDebouncedCallback<T extends (...args: any[]) => any>(
   callback: T,
   delay: number
@@ -16,7 +8,6 @@ export function useDebouncedCallback<T extends (...args: any[]) => any>(
   const callbackRef = useRef(callback);
   const latestArgsRef = useRef<Parameters<T> | null>(null);
 
-  // Keep callback ref up to date
   useEffect(() => {
     callbackRef.current = callback;
   }, [callback]);
@@ -40,7 +31,6 @@ export function useDebouncedCallback<T extends (...args: any[]) => any>(
     [delay]
   ) as T;
 
-  // Clear pending timeout on unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {

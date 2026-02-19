@@ -2,20 +2,18 @@ import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+from crud import get_user_by_id
+from database import get_db
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
+from model.User import User
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db
-from crud import get_user_by_id
-from model.User import User
-
-JWT_SECRET = os.getenv("JWT_SECRET", "change-this-secret-in-production")
+JWT_SECRET = os.getenv("JWT_SECRET")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
-# Swagger OAuth2 password flow expects a form-data token endpoint.
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token")
 
 

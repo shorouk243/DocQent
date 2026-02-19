@@ -8,10 +8,6 @@ interface ShareModalProps {
   onShareSuccess?: () => void; // Callback to refresh documents list
 }
 
-/**
- * Share modal component for adding/removing collaborators
- * Allows entering a collaborator user_id to share the document
- */
 export const ShareModal: React.FC<ShareModalProps> = ({
   documentId,
   isOpen,
@@ -40,7 +36,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       await shareDocument(documentId, id);
       setSuccess(`Document shared with user ${id}`);
       setCollaboratorId('');
-      // Refresh documents list if callback provided
       if (onShareSuccess) {
         onShareSuccess();
       }

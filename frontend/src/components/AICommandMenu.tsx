@@ -77,14 +77,12 @@ export const AICommandMenu: React.FC<AICommandMenuProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const useSearchRef = useRef(false);
 
-  // Reset when menu opens/closes
   useEffect(() => {
     if (isOpen) {
       setInputValue('');
       setSelectedActionIndex(null);
       setUseSearch(false);
       useSearchRef.current = false;
-      // Focus input after animation
       setTimeout(() => inputRef.current?.focus(), 150);
     }
   }, [isOpen]);
@@ -93,31 +91,23 @@ export const AICommandMenu: React.FC<AICommandMenuProps> = ({
     useSearchRef.current = useSearch;
   }, [useSearch]);
 
-  // Handle action selection
   const handleActionSelect = (action: AICommand) => {
     let prompt = action.prompt;
     if (selectedText) {
       prompt += `\n\n${selectedText}`;
     }
     const useWeb = useSearchRef.current;
-    console.log('📝 AICommandMenu: Submitting action', { action: action.label, useSearch: useWeb });
     onSubmit(prompt, useWeb);
   };
 
-  // Handle custom prompt submission
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (inputValue.trim()) {
       const useWeb = useSearchRef.current;
-      console.log('📝 AICommandMenu: Submitting custom prompt', { 
-        prompt: inputValue.trim().substring(0, 50) + '...', 
-        useSearch: useWeb 
-      });
       onSubmit(inputValue.trim(), useWeb);
     }
   };
 
-  // Keyboard navigation
   useEffect(() => {
     if (!isOpen) return;
 
@@ -149,7 +139,6 @@ export const AICommandMenu: React.FC<AICommandMenuProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, selectedActionIndex, inputValue]);
 
-  // Click outside to close
   useEffect(() => {
     if (!isOpen) return;
 
@@ -165,7 +154,6 @@ export const AICommandMenu: React.FC<AICommandMenuProps> = ({
 
   if (!isOpen) return null;
 
-  // Calculate position with fallback and boundary checks
   const getMenuStyle = () => {
     if (!position) {
       return {
@@ -180,26 +168,21 @@ export const AICommandMenu: React.FC<AICommandMenuProps> = ({
     const menuHeight = 300; // Approximate height
     const padding = 16;
 
-    // Calculate position with boundary checks
     let left = position.x;
     let top = position.y;
 
-    // Prevent going off the right edge
     if (left + menuWidth > window.innerWidth - padding) {
       left = window.innerWidth - menuWidth - padding;
     }
 
-    // Prevent going off the left edge
     if (left < padding) {
       left = padding;
     }
 
-    // Prevent going off the bottom edge
     if (top + menuHeight > window.innerHeight - padding) {
       top = position.y - menuHeight - 20; // Show above cursor instead
     }
 
-    // Prevent going off the top edge
     if (top < padding) {
       top = padding;
     }
@@ -226,7 +209,6 @@ export const AICommandMenu: React.FC<AICommandMenuProps> = ({
           style={menuStyle}
         >
         <div className="bg-white rounded-lg shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 w-[360px] overflow-hidden">
-          {/* Input field */}
           <form onSubmit={handleSubmit} className="border-b border-gray-100">
             <div className="px-4 py-3 bg-white">
               <input
@@ -246,7 +228,6 @@ export const AICommandMenu: React.FC<AICommandMenuProps> = ({
                   const newValue = !useSearch;
                   setUseSearch(newValue);
                   useSearchRef.current = newValue;
-                  console.log('🌐 AICommandMenu: Web search toggled:', newValue);
                 }}
                 className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                   useSearch
@@ -263,7 +244,6 @@ export const AICommandMenu: React.FC<AICommandMenuProps> = ({
             </div>
           </form>
 
-          {/* AI Actions List */}
           <div className="max-h-[280px] overflow-y-auto bg-white">
             {AI_ACTIONS.map((action, index) => (
               <motion.button
@@ -293,7 +273,6 @@ export const AICommandMenu: React.FC<AICommandMenuProps> = ({
             ))}
           </div>
 
-          {/* Selected text indicator (subtle) */}
           {selectedText && (
             <div className="px-4 py-2 bg-white border-t border-gray-100">
               <div className="text-xs text-gray-500 truncate">

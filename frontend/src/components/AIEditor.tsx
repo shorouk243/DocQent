@@ -24,7 +24,6 @@ export const AIEditor: React.FC<AIEditorProps> = ({
   const [streamingResponse, setStreamingResponse] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   
-  // Use refs to access state in handleKeyDown
   const menuStateRef = useRef({ showCommandMenu: false, setShowCommandMenu, setSelectedText, setCommandMenuPosition });
 
   useEffect(() => {
@@ -48,7 +47,6 @@ export const AIEditor: React.FC<AIEditorProps> = ({
         class: 'focus:outline-none min-h-[500px] px-4 py-8 text-gray-900 dark:text-gray-100',
       },
       handleKeyDown: (view, event) => {
-        // Handle "/" command - trigger anywhere for better UX
         if (event.key === '/' && !menuStateRef.current.showCommandMenu) {
           const { selection } = view.state;
           const { from } = selection;
@@ -56,13 +54,11 @@ export const AIEditor: React.FC<AIEditorProps> = ({
           event.preventDefault();
           event.stopPropagation();
           
-          // Get any selected text
           const { from: selFrom, to: selTo } = selection;
           const selected = view.state.doc.textBetween(selFrom, selTo);
           
           menuStateRef.current.setSelectedText(selected || '');
           
-          // Calculate menu position using getBoundingClientRect for accurate positioning
           const coords = view.coordsAtPos(from);
           
           menuStateRef.current.setCommandMenuPosition({
@@ -79,22 +75,18 @@ export const AIEditor: React.FC<AIEditorProps> = ({
   });
 
 
-  // Auto-focus editor on mount
   useEffect(() => {
     if (editor) {
-      // Small delay to ensure editor is fully rendered
       setTimeout(() => {
         editor.commands.focus();
       }, 100);
     }
   }, [editor]);
   
-  // Add global keyboard listener as fallback for "/" command
   useEffect(() => {
     if (!editor) return;
     
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
-      // Only handle if editor is focused and "/" is pressed
       if (event.key === '/' && !showCommandMenu && document.activeElement?.closest('.ProseMirror')) {
         const { selection } = editor.state;
         const { from } = selection;
@@ -123,7 +115,6 @@ export const AIEditor: React.FC<AIEditorProps> = ({
     };
   }, [editor, showCommandMenu]);
 
-  // Handle text selection - show menu when text is selected
   useEffect(() => {
     if (!editor) return;
 
@@ -133,14 +124,12 @@ export const AIEditor: React.FC<AIEditorProps> = ({
       const { selection } = editor.state;
       const { from, to } = selection;
       
-      // Clear any pending timeout
       clearTimeout(selectionTimeout);
       
       if (from !== to) {
         const selected = editor.state.doc.textBetween(from, to);
         setSelectedText(selected);
         
-        // Show menu when text is selected (with small delay to avoid flickering)
         if (selected.trim().length > 0) {
           selectionTimeout = setTimeout(() => {
             if (!showCommandMenu) {
@@ -184,10 +173,8 @@ export const AIEditor: React.FC<AIEditorProps> = ({
     let finalResponse = '';
 
     try {
-      // Get current document content as context
       const context = sanitizeContext(editor?.getText() || '');
       
-      // Use streaming API
       await aiApi.askStreaming(
         {
           context,
@@ -200,10 +187,8 @@ export const AIEditor: React.FC<AIEditorProps> = ({
         { useWeb: useSearch }
       );
 
-      // After streaming completes, set the final response
       setAiResponse(finalResponse);
     } catch (error) {
-      console.error('AI request failed:', error);
       setAiResponse('Sorry, I encountered an error. Please try again.');
     } finally {
       setIsStreaming(false);
@@ -213,14 +198,12 @@ export const AIEditor: React.FC<AIEditorProps> = ({
   const handleInsertResponse = useCallback(() => {
     if (!editor) return;
     
-    // Use streaming response if available, otherwise use final response
     const textToInsert = streamingResponse || aiResponse || '';
     if (!textToInsert) return;
 
     const { selection } = editor.state;
     const { from } = selection;
 
-    // Insert the AI response at the current cursor position
     editor.chain().focus().setTextSelection(from).insertContent(textToInsert).run();
     
     setAiResponse(null);
@@ -253,7 +236,6 @@ export const AIEditor: React.FC<AIEditorProps> = ({
 
   return (
     <div className="relative w-full h-full">
-      {/* Toolbar */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Button
@@ -268,7 +250,6 @@ export const AIEditor: React.FC<AIEditorProps> = ({
         </div>
       </div>
 
-      {/* Editor */}
       <div className="bg-white min-h-[calc(100vh-200px)] overflow-y-auto">
         <div className="max-w-3xl mx-auto">
           <div 
@@ -295,7 +276,6 @@ export const AIEditor: React.FC<AIEditorProps> = ({
             <EditorContent editor={editor} />
           </div>
           
-          {/* AI Response Block - Inline */}
           {(aiResponse !== null || streamingResponse || isStreaming) && (
             <div className="px-4 pb-4">
               <AIResponseBlock
@@ -309,7 +289,6 @@ export const AIEditor: React.FC<AIEditorProps> = ({
         </div>
       </div>
 
-      {/* Command Menu */}
       <AICommandMenu
         isOpen={showCommandMenu}
         onClose={() => setShowCommandMenu(false)}

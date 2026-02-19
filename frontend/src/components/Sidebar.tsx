@@ -11,10 +11,6 @@ interface SidebarProps {
   onRenameCurrent?: (title: string) => void;
 }
 
-/**
- * Left sidebar component displaying document list
- * Similar to Google Docs sidebar
- */
 export const Sidebar: React.FC<SidebarProps> = ({
   documents,
   currentDocument,
@@ -38,7 +34,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, [currentDocument?.id, currentDocument?.title]);
   return (
     <div className="w-64 flex-shrink-0 bg-gray-50 border-r border-gray-200 h-screen flex flex-col sticky top-0">
-      {/* New Document Button (fixed in viewport) */}
       <div className="fixed top-14 left-0 w-64 z-40 bg-gray-50 border-b border-gray-200 p-4">
         <button
           onClick={onNewDocument}
@@ -48,7 +43,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
-      {/* Document List */}
       <div className="flex-1 overflow-y-auto pt-20">
         <div className="p-2">
           <div className="sticky top-0 z-10 bg-gray-50">
@@ -69,11 +63,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('Document clicked:', doc.id, doc.title);
                     onSelectDocument(doc);
                   }}
                   onMouseDown={(e) => {
-                    // Prevent text selection when clicking
                     if (e.detail > 1) {
                       e.preventDefault();
                     }

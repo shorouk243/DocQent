@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// Base API client configuration
 const API_BASE_URL = 'http://localhost:8000';
 const ACCESS_TOKEN_STORAGE_KEY = 'collaborative_docs_access_token';
 

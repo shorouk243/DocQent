@@ -1,20 +1,21 @@
-from fastapi import APIRouter, HTTPException, Depends # manage components like database sessions
-from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.ext.asyncio import AsyncSession
-from database import get_db
-from crud import create_user, get_user_by_username, get_user_by_email, get_user_by_id, verify_password, delete_user_by_id
-from schema import UserCreate, UserLogin, UserResponse
 from auth import create_access_token, get_current_user
+from crud import (create_user, delete_user_by_id, get_user_by_email,
+                  get_user_by_id, get_user_by_username, verify_password)
+from database import get_db
+from fastapi import (APIRouter, 
+                     Depends, HTTPException)
+from fastapi.security import OAuth2PasswordRequestForm
 from model.User import User
+from schema import UserCreate, UserLogin, UserResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
-router = APIRouter() # router instance
+router = APIRouter()
 
 
-@router.post("/users/register", response_model=UserResponse) # FastAPI uses Pydantic to: Serialize response, Hide sensitive fields (like password), Just endpoint registration
-async def register_user_endpoint(user_data: UserCreate, db: AsyncSession = Depends(get_db)): # db: Session = Depends(get_db): get_db is a function that creates a database session.Depends(get_db) tells FastAPI: "Give me a database session automatically when this endpoint is called."
-    # bcrypt accepts at most 72 bytes for password input.
+@router.post("/users/register", response_model=UserResponse)
+async def register_user_endpoint(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
     if len(user_data.password.encode("utf-8")) > 72:
-        raise HTTPException(status_code=400, detail="Password is too long (max 72 bytes)")
+        raise HTTPException(status_code=400, detail="Password is too long (max 72 bytes)") 
     existing_user = await get_user_by_username(db, user_data.username)
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already exists")
@@ -22,15 +23,11 @@ async def register_user_endpoint(user_data: UserCreate, db: AsyncSession = Depen
     if existing_email:
         raise HTTPException(status_code=400, detail="Email already exists")
     db_user = await create_user(db, user_data.username, user_data.email, user_data.password)
-    # user_response = UserResponse.from_orm(db_user)
-    # print(user_response.json())
     return db_user
 
 @router.post("/users/login")
 async def login_user_endpoint(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
     db_user = await get_user_by_username(db, login_data.username)  
-    # user_response = UserResponse.from_orm(db_user)
-    # print(user_response.json())
     if not db_user or not verify_password(login_data.password, db_user.password):
         raise HTTPException(status_code=401, detail="Invalid username or password")
     token = create_access_token(db_user.id)
@@ -61,8 +58,6 @@ async def get_user_endpoint(
     if current_user.id != user_id:
         raise HTTPException(status_code=403, detail="Access denied")
     db_user = await get_user_by_id(db, user_id)
-    # user_response = UserResponse.from_orm(db_user)
-    # print(user_response.json())
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
     return db_user

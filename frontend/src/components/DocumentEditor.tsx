@@ -44,20 +44,10 @@ const parseDocumentContent = (raw: string) => {
       return parsed;
     }
   } catch (error) {
-    // Ignore parse error and fallback to plain text.
   }
   return buildFallbackDoc(raw);
 };
 
-/**
- * Document Editor Component
- *
- * - Editable title
- * - Notion-like block editor (TipTap)
- * - AI assistant actions
- *
- * Note: WebSocket collaboration for block-level JSON is not implemented here.
- */
 export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   document,
   userId,
@@ -107,42 +97,28 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   useEffect(() => {
     if (!operationHandlerRef) return;
     operationHandlerRef.current = (operation) => {
-      console.log('📥 DocumentEditor: Received operation:', {
-        op: operation.op,
-        user_id: operation.user_id,
-        current_user_id: userId,
-        has_content: !!operation.content,
-      });
-      
-      // Only apply operations from OTHER users, not from the current user
       if (operation.user_id === userId) {
-        console.log('⏭️ DocumentEditor: Skipping own operation');
         return;
       }
       
       if (operation.op !== 'sync' || !operation.content) {
-        console.log('⏭️ DocumentEditor: Invalid operation format');
         return;
       }
       
       const editor = editorRef.current;
       if (!editor) {
-        console.log('⏭️ DocumentEditor: Editor not available');
         return;
       }
       
       try {
         const parsed = JSON.parse(operation.content);
         if (!parsed || parsed.type !== 'doc') {
-          console.log('⏭️ DocumentEditor: Invalid content format');
           return;
         }
         
-        console.log('✅ DocumentEditor: Applying remote operation from user', operation.user_id);
         isApplyingRemoteRef.current = true;
         editor.commands.setContent(parsed);
       } catch (error) {
-        console.error('❌ DocumentEditor: Failed to apply remote sync:', error);
       } finally {
         setTimeout(() => {
           isApplyingRemoteRef.current = false;
@@ -159,9 +135,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
 
 
   const debouncedSendSync = useDebouncedCallback((payload: string) => {
-    console.log('📤 DocumentEditor: Sending sync operation, user_id:', userId);
     if (!onSendOperation) {
-      console.warn('⚠️ DocumentEditor: onSendOperation is not available');
       return;
     }
     try {
@@ -172,7 +146,6 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
         content: payload,
       });
     } catch (error) {
-      console.error('❌ DocumentEditor: Failed to send operation:', error);
     }
   }, 400);
 
@@ -264,10 +237,6 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Color palette feature removed - was causing ReferenceError
-  // If needed in the future, add state variables:
-  // const [showColorPalette, setShowColorPalette] = useState(false);
-  // const [colorPalettePosition, setColorPalettePosition] = useState<{ x: number; y: number } | undefined>();
 
 
   const handlePromptSubmit = useCallback(
@@ -290,7 +259,6 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
           aiStreamLengthRef.current = 0;
           aiStreamStartRef.current = to;
 
-          // Position inline AI status indicator near the caret, similar to Notion AI
           const container = editorScrollRef.current;
           try {
             if (container) {
@@ -303,22 +271,13 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
               setAiStatusPosition(null);
             }
           } catch {
-            // If coords calculation fails, just hide the inline indicator
             setAiStatusPosition(null);
           }
         }
 
-        // For web search, don't send document context - only the question
-        // The backend will fetch web results and use only those
-        console.log('📝 DocumentEditor: Preparing AI request', {
-          useSearch,
-          prompt: prompt.substring(0, 50) + '...',
-          contextLength: useSearch ? 0 : context.length,
-        });
-        
         await aiApi.askStreaming(
           {
-            context: useSearch ? '' : context,  // Empty context for web search
+            context: useSearch ? '' : context,
             question: prompt,
           },
           (chunk: string) => {
@@ -361,7 +320,6 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
           setAiResponse('No response received from AI. Please try again.');
         }
       } catch (error: any) {
-        console.error('AI request failed:', error);
         const errorMessage =
           error?.response?.data?.detail || error?.message || 'Sorry, I encountered an error. Please try again.';
         setAiResponse(`Error: ${errorMessage}`);
@@ -418,8 +376,6 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
     aiStreamLengthRef.current = 0;
   }, []);
 
-  // If the user starts typing while an AI suggestion is visible, automatically
-  // discard the suggestion and its highlight (Notion-style behavior).
   useEffect(() => {
     const handleUserTyping = (event: KeyboardEvent) => {
       if (!showAiPanel || isStreaming) return;
@@ -434,7 +390,6 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
 
       if (!isTextishKey) return;
 
-      // Remove the AI suggestion; let the keypress go through to the editor
       handleDismissResponse();
     };
 
@@ -449,12 +404,9 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
     const textToInsert = streamingResponse || aiResponse || '';
     if (range && textToInsert) {
       const html = markdownToHtml(textToInsert);
-      // Remove highlight mark by replacing content (insertContentAt removes marks)
-      // First, select the range and unset the highlight mark
       const { tr } = editor.state;
       tr.removeMark(range.start, range.end, editor.schema.marks.highlight);
       editor.view.dispatch(tr);
-      // Then replace with final content
       editor
         .chain()
         .focus()
@@ -475,23 +427,19 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
     const range = aiStreamRangeRef.current;
     if (!range) return;
 
-    // Extract plain text from selection to reinsert below.
     const textToInsert = streamingResponse || aiResponse || '';
     if (!textToInsert) return;
 
-    // Remove highlight mark and delete current streamed content
     const { tr } = editor.state;
     tr.removeMark(range.start, range.end, editor.schema.marks.highlight);
     editor.view.dispatch(tr);
     
-    // Delete the content
     editor
       .chain()
       .focus()
       .insertContentAt({ from: range.start, to: range.end }, '')
       .run();
 
-    // Insert a new paragraph below the original selection end (without highlight).
     const { to } = selectionRef.current || editor.state.selection;
     const html = markdownToHtml(textToInsert);
     editor.chain().focus().insertContentAt(to, html).run();
@@ -519,7 +467,6 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
 
   return (
     <div className="flex-1 flex flex-col relative">
-      {/* Title bar removed */}
 
       <div className="flex-1 flex overflow-hidden">
         <div ref={editorScrollRef} className="flex-1 px-6 pt-2 pb-6 overflow-y-auto relative">
@@ -531,7 +478,6 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
             editorRef={editorRef}
           />
 
-          {/* Inline AI status indicator near the edited block (Notion-style) */}
           {isStreaming && aiStatusPosition && !streamingResponse && (
             <div
               className="absolute z-40"
@@ -610,7 +556,6 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
               </svg>
             </div>
             <div className="h-full px-2 py-4 overflow-y-auto">
-              {/* Expanded list only */}
               <div className="hidden group-hover:block">
                 <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-3">
                   Outline

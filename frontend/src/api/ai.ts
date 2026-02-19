@@ -17,8 +17,6 @@ export const aiApi = {
     return { answer: response.data as string };
   },
   
-  // Simulate streaming by returning the full response and letting the component handle animation
-  // In the future, this can be replaced with Server-Sent Events (SSE) or WebSocket streaming
   askStreaming: async (
     request: AIRequest,
     onChunk: (chunk: string) => void,
@@ -27,14 +25,7 @@ export const aiApi = {
     try {
       const baseUrl = apiClient.defaults.baseURL || '';
       const endpoint = options?.useWeb ? '/ai/ask_web' : '/ai/ask';
-      
-      console.log('🌐 Frontend: Sending AI request', {
-        endpoint,
-        useWeb: options?.useWeb,
-        question: request.question,
-        contextLength: request.context?.length || 0,
-      });
-      
+
       const response = await fetch(`${baseUrl}${endpoint}`, {
         method: 'POST',
         headers: {

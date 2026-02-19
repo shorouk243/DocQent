@@ -1,23 +1,21 @@
-import os
 import asyncio
+import os
+
+from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-from llama_cpp import Llama 
+from llama_cpp import Llama
 from pydantic import BaseModel
-from dotenv import load_dotenv
-from langsmith import traceable
 from tavily import TavilyClient
 
 load_dotenv()
 router = APIRouter()
 
-# --- CONFIG ---
-# n_ctx=8192 for sufficient room for both Web and Internal context
 llm = Llama(
     model_path="/home/shorouk/Documents/shorouk/project/app/granite-4.0-h-micro-Q4_K_M.gguf", 
     n_gpu_layers=-1, 
     n_ctx=8192,
-    logits_all=False  # Disabled as Perplexity is no longer needed
+    logits_all=False 
 )
 
 class ChatRequest(BaseModel):
@@ -26,7 +24,6 @@ class ChatRequest(BaseModel):
 
 @router.post("/ask")
 async def ask_assistant(request: ChatRequest):
-    # Improved Prompt with clearer instructions to prevent "refusal"
     prompt = f"""<|start_of_role|>system<|end_of_role|>You are a precise technical assistant. 
 Use the provided context to answer the question, or internal knowledge. If you don't know, say you don't know. 
 Your goal is to provide structured, factual information.
@@ -39,7 +36,6 @@ OUTPUT STYLE RULES:
 5. **NO META-DESCRIPTIONS:** Never describe what you're doing. Do not use phrases like "The following text has been rewritten...", "Here is the rewritten version...", "The text below...", or any explanation of your actions. Just output the result directly.
 6. **STRICT GROUNDING:** If the information is missing, respond exactly with: "DATA_NOT_FOUND".
 
-### CONTEXT:
 {request.context}
 <|end_of_text|>
 <|start_of_role|>user<|end_of_role|>{request.question}<|end_of_text|>
@@ -48,7 +44,6 @@ OUTPUT STYLE RULES:
     async def stream_generator():
         llm.reset() 
         
-        # Start Streaming with error handling
         try:
             stream = llm(
                 prompt, 
@@ -60,7 +55,6 @@ OUTPUT STYLE RULES:
             )
 
             for chunk in stream:
-                # Safer data extraction
                 if chunk and "choices" in chunk and len(chunk["choices"]) > 0:
                     token = chunk["choices"][0].get("text", "")
                     yield token
@@ -72,9 +66,6 @@ OUTPUT STYLE RULES:
 
 @router.post("/ask_web")
 async def ask_assistant_web(request: ChatRequest):
-    print(f"🔍 Backend: Web search request received")
-    print(f"   Question: {request.question}")
-    print(f"   Context length: {len(request.context)} chars")
     
     tavily_key = os.getenv("TavilyClient_api_key")
     if not tavily_key:
@@ -84,20 +75,16 @@ async def ask_assistant_web(request: ChatRequest):
     search_response = None
     try:
         tavily = TavilyClient(api_key=tavily_key)
-        print(f"🔍 Backend: Searching Tavily for: {request.question}")
         search_response = tavily.search(
             query=request.question,
             search_depth="advanced",
             max_results=5
         )
-        print(f"✅ Backend: Tavily search completed, found {len(search_response.get('results', []))} results")
         
         for result in search_response.get('results', []):
             web_context += f"\n---\nSource: {result['url']}\nContent: {result['content']}\n"
         
-        print(f"📄 Backend: Web context length: {len(web_context)} chars")
     except Exception as e:
-        print(f"❌ Backend: Tavily search failed: {str(e)}")
         raise HTTPException(status_code=502, detail=f"Tavily search failed: {str(e)}")
 
     if not web_context:
@@ -130,7 +117,6 @@ OUTPUT STYLE RULES:
 5. **NO META-DESCRIPTIONS:** Never describe what you're doing. Do not use phrases like "The following text has been rewritten...", "Here is the rewritten version...", "The text below...", or any explanation of your actions. Just output the result directly.
 
 
-### WEB CONTEXT (ONLY SOURCE OF INFORMATION):
 {web_context}{sources}
 <|end_of_text|>
 <|start_of_role|>user<|end_of_role|>{request.question}<|end_of_text|>
@@ -144,9 +130,9 @@ OUTPUT STYLE RULES:
                 stop=["<|end_of_text|>", "<|end_of_role|>"],
                 stream=True, 
                 max_tokens=1024, 
-                temperature=0.0,  # Zero temperature for maximum determinism
-                top_p=0.1,  # Very low top_p to reduce randomness
-                repeat_penalty=1.2  # Penalize repetition to keep responses focused
+                temperature=0.0,  
+                top_p=0.1,  
+                repeat_penalty=1.2  
             )
 
             for chunk in stream:
@@ -155,7 +141,6 @@ OUTPUT STYLE RULES:
                 await asyncio.sleep(0.01)
 
         except Exception as e:
-            # Yielding the error as a string since headers are already sent
             yield f"\n\n[SYSTEM ERROR]: {str(e)}"
 
     return StreamingResponse(stream_generator(), media_type="text/plain")

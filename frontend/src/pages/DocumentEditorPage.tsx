@@ -11,19 +11,10 @@ import { WebSocketOperation } from '../services/websocket';
 import { Document } from '../api/documents';
 import { getAccessToken } from '../api/client';
 
-/**
- * Main Document Editor Page
- * 
- * This page integrates:
- * - Document CRUD operations
- * - WebSocket real-time collaboration
- * - UI components (Sidebar, Toolbar, Editor, Share Modal)
- */
 export const DocumentEditorPage: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   
-  // Redirect to login if user is not available (shouldn't happen due to ProtectedRoute, but safety check)
   useEffect(() => {
     if (!user) {
       navigate('/login');
@@ -52,10 +43,8 @@ export const DocumentEditorPage: React.FC = () => {
   const dirtyContentRef = useRef(false);
   const savingRef = useRef(false);
 
-  // Handle WebSocket operations
   const handleWebSocketOperation = useCallback(
     (operation: WebSocketOperation) => {
-      // Apply operation to the editor via the ref
       if (operationHandlerRef.current) {
         operationHandlerRef.current(operation);
       }
@@ -63,7 +52,6 @@ export const DocumentEditorPage: React.FC = () => {
     []
   );
 
-  // Setup WebSocket connection (only if we have both document and user)
   const { sendOperation, isConnected: wsConnected } = useWebSocket(
     currentDocument?.id || null,
     user?.id || null, // Use null instead of 0 to prevent invalid connections
@@ -71,7 +59,6 @@ export const DocumentEditorPage: React.FC = () => {
     handleWebSocketOperation
   );
 
-  // Update connection status
   useEffect(() => {
     setIsConnected(wsConnected);
   }, [wsConnected]);
@@ -86,7 +73,6 @@ export const DocumentEditorPage: React.FC = () => {
   }, []);
 
 
-  // Handle new document creation
   const handleNewDocument = async () => {
     if (!user) return;
     try {
@@ -96,41 +82,29 @@ export const DocumentEditorPage: React.FC = () => {
       });
       setCurrentDocument(newDoc);
     } catch (err) {
-      console.error('Failed to create document:', err);
       alert('Failed to create document. Please try again.');
     }
   };
 
-  // Handle document selection
   const handleSelectDocument = useCallback(async (document: Document) => {
-    // Don't do anything if already selected
     if (currentDocument?.id === document.id) {
-      console.log('Document already selected:', document.id);
       return;
     }
     
     try {
-      console.log('Selecting document:', document.id, document.title);
-      // Set document immediately for better UX (optimistic update)
       setCurrentDocument(document);
       
-      // Then fetch latest version from server in background
       try {
       const doc = await fetchDocument(document.id);
-        console.log('Document fetched, updating current:', doc.id);
       setCurrentDocument(doc);
       } catch (fetchErr) {
-        console.error('Failed to fetch document, using cached version:', fetchErr);
-        // Keep the document we set optimistically
       }
     } catch (err) {
-      console.error('Failed to select document:', err);
       alert('Failed to load document. Please try again.');
     }
   }, [currentDocument, fetchDocument]);
 
 
-  // Handle document deletion
   const handleDeleteDocument = async (documentId: number) => {
     if (!user) return;
     try {
@@ -139,19 +113,15 @@ export const DocumentEditorPage: React.FC = () => {
         setCurrentDocument(null);
       }
     } catch (err) {
-      console.error('Failed to delete document:', err);
       alert('Failed to delete document. Please try again.');
     }
   };
 
-  // Save functions (receive documentId/userId as args to avoid stale closure when debounce fires)
-  // Use silent=true to prevent loading overlay from showing during typing
   const saveTitle = useCallback(
     async (documentId: number, title: string) => {
       try {
         await updateCurrentDocument(documentId, { title }, true);
       } catch (err) {
-        console.error('Failed to update title:', err);
       }
     },
     [updateCurrentDocument]
@@ -163,7 +133,6 @@ export const DocumentEditorPage: React.FC = () => {
         await updateCurrentDocument(documentId, { content }, true);
         lastSavedContentRef.current = content;
       } catch (err) {
-        console.error('Failed to update content:', err);
       }
     },
     [updateCurrentDocument]
@@ -172,7 +141,6 @@ export const DocumentEditorPage: React.FC = () => {
   const debouncedSaveTitle = useDebouncedCallback(saveTitle, 500);
   const debouncedSaveContent = useDebouncedCallback(saveContent, 1000);
 
-  // Handle title change with debounced save
   const handleTitleChange = useCallback(
     (title: string) => {
       if (!currentDocument || !user) return;
@@ -181,7 +149,6 @@ export const DocumentEditorPage: React.FC = () => {
     [currentDocument, user, debouncedSaveTitle]
   );
 
-  // Handle content change with debounced save
   const handleContentChange = useCallback(
     (content: string) => {
       if (!currentDocument || !user) return;
@@ -200,7 +167,6 @@ export const DocumentEditorPage: React.FC = () => {
       await updateCurrentDocument(currentDocument.id, { content: latest }, true);
       lastSavedContentRef.current = latest;
     } catch (err) {
-      console.error('Failed to flush content save:', err);
     }
   }, [currentDocument, user, updateCurrentDocument]);
 
@@ -240,7 +206,6 @@ export const DocumentEditorPage: React.FC = () => {
           dirtyContentRef.current = false;
         })
         .catch((err) => {
-          console.error('Failed to autosave content:', err);
         })
         .finally(() => {
           savingRef.current = false;
@@ -254,7 +219,6 @@ export const DocumentEditorPage: React.FC = () => {
     };
   }, [flushContentSave, currentDocument, user, updateCurrentDocument]);
 
-  // Handle sending operation via WebSocket
   const handleSendOperation = useCallback(
     (operation: WebSocketOperation) => {
       sendOperation(operation);
@@ -263,7 +227,6 @@ export const DocumentEditorPage: React.FC = () => {
   );
 
 
-  // Handle logout
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -275,7 +238,6 @@ export const DocumentEditorPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      {/* Top Bar with User Info and Share Button */}
       <div className="border-b border-gray-200 bg-white px-4 py-2 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-semibold text-gray-800">
@@ -286,7 +248,6 @@ export const DocumentEditorPage: React.FC = () => {
           )}
         </div>
         <div className="flex items-center gap-4">
-          {/* User Info */}
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-700">
               Welcome, <span className="font-medium">{user.username}</span>
@@ -299,7 +260,6 @@ export const DocumentEditorPage: React.FC = () => {
               Logout 
             </button>
           </div>
-          {/* Share Button */}
           {currentDocument && (
             <button
               onClick={() => setIsShareModalOpen(true)}
@@ -312,7 +272,6 @@ export const DocumentEditorPage: React.FC = () => {
       </div>
 
       <div className="flex flex-1">
-        {/* Sidebar */}
         <Sidebar
           documents={documents}
           currentDocument={currentDocument}
@@ -323,7 +282,6 @@ export const DocumentEditorPage: React.FC = () => {
           onRenameCurrent={handleTitleChange}
         />
 
-        {/* Main Editor Area */}
         <div className="flex-1 flex flex-col">
           {currentDocument ? (
             <DocumentEditor
@@ -345,7 +303,6 @@ export const DocumentEditorPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Share Modal */}
       {currentDocument && user && (
         <ShareModal
           documentId={currentDocument.id}
@@ -355,14 +312,12 @@ export const DocumentEditorPage: React.FC = () => {
         />
       )}
 
-      {/* Error Display */}
       {error && (
         <div className="fixed bottom-4 right-4 bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg shadow-lg">
           {error}
         </div>
       )}
 
-      {/* Loading Overlay - Only show for initial load, not for document selection */}
       {loading && !currentDocument && (
         <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50 pointer-events-auto">
           <div className="bg-white rounded-lg p-4">

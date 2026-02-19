@@ -10,24 +10,18 @@ import {
   DocumentUpdate,
 } from '../api/documents';
 
-/**
- * Custom hook for managing documents
- * Provides state and functions for document CRUD operations
- */
 export const useDocuments = (isAuthenticated: boolean) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch all documents for the user on mount or when userId changes
   useEffect(() => {
     if (isAuthenticated) {
       fetchAllDocuments();
     }
   }, [isAuthenticated]);
 
-  // Fetch all documents (owned + shared)
   const fetchAllDocuments = useCallback(async () => {
     if (!isAuthenticated) return;
     setLoading(true);
@@ -38,13 +32,11 @@ export const useDocuments = (isAuthenticated: boolean) => {
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || 'Failed to fetch documents';
       setError(errorMessage);
-      console.error('Failed to fetch documents:', err);
     } finally {
       setLoading(false);
     }
   }, [isAuthenticated]);
 
-  // Fetch a single document
   const fetchDocument = useCallback(async (documentId: number) => {
     setLoading(true);
     setError(null);
@@ -61,7 +53,6 @@ export const useDocuments = (isAuthenticated: boolean) => {
     }
   }, []);
 
-  // Create a new document
   const createNewDocument = useCallback(async (documentData: DocumentCreate) => {
     setLoading(true);
     setError(null);
@@ -79,15 +70,12 @@ export const useDocuments = (isAuthenticated: boolean) => {
     }
   }, []);
 
-  // Refresh documents list (useful after sharing)
   const refreshDocuments = useCallback(() => {
     if (isAuthenticated) {
       fetchAllDocuments();
     }
   }, [isAuthenticated, fetchAllDocuments]);
 
-  // Update a document
-  // silent: if true, don't show loading overlay (for debounced saves)
   const updateCurrentDocument = useCallback(
     async (documentId: number, update: DocumentUpdate, silent: boolean = false) => {
       if (!silent) {
@@ -114,7 +102,6 @@ export const useDocuments = (isAuthenticated: boolean) => {
     []
   );
 
-  // Delete a document
   const deleteCurrentDocument = useCallback(
     async (documentId: number) => {
       setLoading(true);

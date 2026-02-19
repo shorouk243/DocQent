@@ -81,7 +81,6 @@ export const AIResponseBlock: React.FC<AIResponseBlockProps> = ({
     >
       <Card className="border-l-4 border-l-blue-500 dark:border-l-blue-400">
         <div className="p-4">
-          {/* Header */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-blue-500 dark:text-blue-400" />
@@ -113,7 +112,6 @@ export const AIResponseBlock: React.FC<AIResponseBlockProps> = ({
             </div>
           </div>
 
-          {/* Response content with streaming support */}
           <div className="prose prose-sm dark:prose-invert max-w-none">
             <div style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
               {renderMarkdownLite(response)}
@@ -123,7 +121,6 @@ export const AIResponseBlock: React.FC<AIResponseBlockProps> = ({
             </div>
           </div>
 
-          {/* Actions */}
           {!isLoading && onInsert && response && (
             <div className="mt-4 flex gap-2">
               <Button size="sm" onClick={onInsert}>
