@@ -6,19 +6,19 @@ GraniteDocs is a professional-grade, real-time collaborative editor that transfo
 
 ## Key Features
 
-- Documentation-First AI: Powered by IBM Granite-4.0, specifically tuned to avoid conversational filler and output structured Markdown.
-- Parameter-Efficient Fine-Tuning: Model adaptation performed using QLoRA for efficient domain tuning with lower GPU memory usage.
-- Web-Augmented Generation (RAG): Real-time web search integration via Tavily AI to ensure documentation is grounded in current facts.
-- Live Collaboration: Multi-user editing via WebSockets, enabling teams to build documentation together.
-- JWT Authentication: Secure, signed access tokens for protected API and WebSocket routes.
-- IDOR Protection: Every request is verified server-side to ensure users can only access their own documents.
-- Bcrypt Hashing: Modern password protection with a legacy SHA-256 fallback for seamless user migration.
-- Streaming Responses: Real-time token streaming using FastAPI `StreamingResponse` for zero-latency feedback.
+- **Documentation-First AI**: Powered by **IBM Granite-4.0**, specifically tuned to avoid conversational filler and output structured Markdown.
+- **Parameter-Efficient Fine-Tuning**: Model adaptation performed using **QLoRA** for efficient domain tuning with lower GPU memory usage.
+- **Web-Augmented Generation (RAG):** Real-time web search integration via **Tavily AI** to ensure documentation is grounded in current facts.
+- **Live Collaboration**: Multi-user editing synchronized via **WebSockets** and **Redis**, enabling seamless team workflows.
+- **JWT Authentication**: Secure, signed access tokens for protected API and WebSocket routes.
+- **IDOR Protection**: Every request is verified server-side to ensure users can only access their own documents.
+- **Bcrypt Hashing**: Modern password protection with a legacy SHA-256 fallback for seamless user migration.
+- **Streaming Responses**: Real-time token streaming using FastAPI `StreamingResponse` for zero-latency feedback.
 
 ## Evaluation
 
-- LLM-as-a-Judge: Response quality was evaluated using the Gemini model as an external judge.
-- Perplexity: Language-model perplexity was used as an additional quantitative fluency metric.
+- **LLM-as-a-Judge**: Response quality was evaluated using the Gemini model as an external judge.
+- **Perplexity**: Language-model perplexity was used as an additional quantitative fluency metric.
 
 DocQent is a full-stack collaborative documentation platform with:
 - Real-time multi-user editing (WebSocket + Redis)
@@ -27,10 +27,10 @@ DocQent is a full-stack collaborative documentation platform with:
 
 ## Tech Stack
 
-- Backend: FastAPI, SQLAlchemy (async), MySQL, Redis
-- Frontend: React + TypeScript + Vite
-- Auth: JWT (`python-jose`)
-- AI: llama-cpp-python, IBM Granite-4.0, Tavily API
+- **Backend**: FastAPI, SQLAlchemy (Async), MySQL, Redis
+- **Frontend**: React + TypeScript + Vite
+- **Auth**: JWT (`python-jose`), Passlib (Bcrypt)
+- **AI**: llama-cpp-python, IBM Granite-4.0, Tavily API
 
 ## Project Structure
 
