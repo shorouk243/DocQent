@@ -110,8 +110,8 @@ API docs: `http://localhost:8000/docs`
 - `POST /ai/ask_web` - web-grounded answer
 
 > **Watch the Real-Time Demo:**
-> ![DocQent Collaboration Demo](https://path-to-your-gif-or-video.gif](https://github.com/shorouk243/DocQent/blob/main/Test%20the%20docs.mp4)
->
+> ![DocQent Demo](assets/demo.gif)>
+> 
 ## License
 
 Add your preferred license (for example: MIT) in a `LICENSE` file.
